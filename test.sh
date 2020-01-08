@@ -1,6 +1,6 @@
 #!/bin/bash
 
-M2="/Users/scott.fehrman/.m2/repository"
+M2="/home/forgerock/.m2/repository"
 
 CP="target/classes"
 CP="${CP}:${M2}/com/forgerock/frdp/frdp-framework/1.0.0/frdp-framework-1.0.0.jar"
