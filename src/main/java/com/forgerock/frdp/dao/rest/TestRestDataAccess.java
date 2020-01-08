@@ -36,10 +36,10 @@ public class TestRestDataAccess {
       JSONObject jsonQueryParams = null;
 
       // setup
-      params.put(RestDataAccess.PARAM_PROTOCOL, "https");
+      params.put(RestDataAccess.PARAM_PROTOCOL, "http");
       params.put(RestDataAccess.PARAM_HOST, "127.0.0.1");
-      params.put(RestDataAccess.PARAM_PORT, "443");
-      params.put(RestDataAccess.PARAM_PATH, "TOMCAT_DEPLOYMENT/content/rest/content-server/content");
+      params.put(RestDataAccess.PARAM_PORT, "38080");
+      params.put(RestDataAccess.PARAM_PATH, "content-server/rest/content-server/content");
 
       dao = new RestDataAccess(params);
 
