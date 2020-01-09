@@ -4,6 +4,14 @@ ForgeRock Demonstration Platform : Data Access Object : REST ... an implementati
 
 `git clone https://github.com/ForgeRock/frdp-dao-rest.git`
 
+# Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# License
+
+[MIT](/LICENSE)
+
 # Requirements
 
 The following items must be installed:
@@ -24,7 +32,7 @@ The following items must be completed, in order:
 
 Run *Maven* (`mvn`) processes to clean, compile and install the package:
 
-```
+```bash
 mvn clean
 mvn compile
 mvn install
@@ -68,7 +76,7 @@ This section covers how to use the `TestRestDataAccess.java` program which tests
 `sh ./test.sh` \
 (sample test output below)
 
-```
+```bash
 Dec 19, 2019 8:42:10 PM com.forgerock.frdp.dao.rest.RestDataAccess execute
 WARNING: com.forgerock.frdp.dao.rest.RestDataAccess:execute: JSON Input is null or empty
 ====
