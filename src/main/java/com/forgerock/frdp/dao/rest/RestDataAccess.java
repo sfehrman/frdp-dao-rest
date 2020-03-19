@@ -1,8 +1,7 @@
 /*
- * Copyright (c) 2018-2019, ForgeRock, Inc., All rights reserved
+ * Copyright (c) 2018-2020, ForgeRock, Inc., All rights reserved
  * Use subject to license terms.
  */
-
 package com.forgerock.frdp.dao.rest;
 
 import com.forgerock.frdp.common.ConstantsIF;
@@ -36,12 +35,23 @@ import org.json.simple.parser.JSONParser;
 
 /**
  * Implements a REST / JSON service that uses the Data Access Object (DAO) to
- * make http calls to a service that can consume the opertions. The JAX / Jersey
- * client "REST" library is used to implement this class. The DAO contain data
- * and an operations.
- * 
+ * make http calls to a service that can consume the operations. The JAX /
+ * Jersey client "REST" library is used to implement this class. The DAO contain
+ * data and an operations.
+ *
+ * There are two modes for this class:
+ *
+ * 1: Static base target URI Provide information about the target URI, this will
+ * be used for all operations Individual operations can provide a supplement
+ * path that will be appended to the "base Target" URI. The "base Target" path
+ * is set with parameters for components of a base URI: "protocol", "host",
+ * "port", "path"
+ *
+ * 2: Dynamic full target URI No base target URI information is provided during
+ * object creation Each operation must provide a full / complete URI
+ *
  * DAO Operations map to http operations:
- * 
+ *
  * <pre>
  * CREATE  | POST
  * SEARCH  | GET
@@ -49,12 +59,12 @@ import org.json.simple.parser.JSONParser;
  * REPLACE | PUT
  * DELETE  | DELETE
  * </pre>
- * 
+ *
  * DAO JSON structure:
- * 
+ *
  * <pre>
  * {
- *   "uid": "...", 
+ *   "uid": "...",
  *   "data | form": {
  *      "attr": "value",
  *      ...
@@ -71,10 +81,11 @@ import org.json.simple.parser.JSONParser;
  *     "name1": "value1",
  *     "nameX": "valueX"
  *   },
- *   "path": ".../..." // appended to base target
+ *   "path": ".../...", // appended to base target (static base target only)
+ *   "uri": "protocol://host:port/..." // (dynamic full target only)
  * }
  * </pre>
- * 
+ *
  * @author Scott Fehrman, ForgeRock, Inc.
  */
 public class RestDataAccess extends DataAccess {
@@ -84,19 +95,48 @@ public class RestDataAccess extends DataAccess {
    public static final String PARAM_PORT = "port";
    public static final String PARAM_PATH = "path";
 
+   private boolean _haveBaseTarget = false;
    private final String CLASS = this.getClass().getName();
    private Client _client = null;
    private WebTarget _target = null;
    private JSONParser _parser = null;
 
    /**
-    * Constructor
-    * 
+    * Constructor, creates object with a static base target URI.
+    *
+    * The parameters must include connection information for the URI:
+    * "protocol", "host", "port", "path"
+    *
     * @param params Map<String, String> configuration parameters
     * @throws Exception
     */
    public RestDataAccess(Map<String, String> params) throws Exception {
       super(params);
+
+      String METHOD = "RestDataAccess(params)";
+
+      _logger.entering(CLASS, METHOD);
+
+      if (params != null && !params.isEmpty()) {
+         _haveBaseTarget = true;
+      }
+
+      this.init();
+
+      _logger.exiting(CLASS, METHOD);
+
+      return;
+   }
+
+   /**
+    * Constructor, creates object for dynamic URI operations.
+    *
+    * Each operation must contain a "uri" attribute for the complete target
+    *
+    * @throws Exception
+    */
+   public RestDataAccess() throws Exception {
+      super();
 
       String METHOD = "RestDataAccess()";
 
@@ -118,8 +158,41 @@ public class RestDataAccess extends DataAccess {
    }
 
    /**
+    * Validate the OperationIF object, overrides superclass method.
+    *
+    * Checks for "uri" JSON attribute if base target is false
+    *
+    * @param oper the OperationIF object
+    * @throws Exception could not validate the operation
+    */
+   @Override
+   protected void validate(final OperationIF oper) throws Exception {
+      String METHOD = Thread.currentThread().getStackTrace()[1].getMethodName();
+      String uri = null;
+      JSONObject json = null;
+
+      _logger.entering(CLASS, METHOD);
+
+      super.validate(oper);
+
+      if (!_haveBaseTarget) {
+         json = oper.getJSON();
+         uri = JSON.getString(json, ConstantsIF.URI);
+
+         if (STR.isEmpty(uri)) {
+            throw new Exception("No base target, required attribute '"
+               + ConstantsIF.URI + "' is empty");
+         }
+      }
+
+      _logger.exiting(CLASS, METHOD);
+
+      return;
+   }
+
+   /**
     * Execute the HTTP REST operation
-    * 
+    *
     * @param operInput OperationIF input object
     * @return OperationIF output object
     */
@@ -145,12 +218,14 @@ public class RestDataAccess extends DataAccess {
          operOutput.setError(true);
          operOutput.setState(STATE.FAILED);
          operOutput.setStatus(msg.toString());
+         operOutput.setJSON(new JSONObject());
       }
 
       if (!error) {
          operOutput = this.submitRequest(operInput);
       } else {
-         _logger.log(Level.WARNING, operOutput == null ? "dataOutput is null" : operOutput.getStatus());
+         _logger.log(Level.WARNING,
+            operOutput == null ? "dataOutput is null" : operOutput.getStatus());
       }
 
       _logger.exiting(CLASS, METHOD);
@@ -163,15 +238,25 @@ public class RestDataAccess extends DataAccess {
     */
    @Override
    public void close() {
+      String METHOD = Thread.currentThread().getStackTrace()[1].getMethodName();
+
+      _logger.entering(CLASS, METHOD);
+
+      if (_client != null) {
+         _client.close();
+      }
+
+      _logger.exiting(CLASS, METHOD);
+
       return;
    }
+
    /*
     * =============== PRIVATE METHODS ===============
     */
-
    /**
     * Process HTTP Request
-    * 
+    *
     * <pre>
     * JSON input:
     * {
@@ -192,10 +277,11 @@ public class RestDataAccess extends DataAccess {
     *     "name1": "value1",
     *     "nameX": "valueX"
     *   },
-    *   "path": ".../..." // appended to base target
+    *   "path": ".../...", // appended to base target (static base target only)
+    *   "uri": "protocol://host:port/..." // (dynamic full target only)
     * }
     * </pre>
-    * 
+    *
     * @param operInput OperationIF input
     * @return OperationIF output
     */
@@ -206,6 +292,7 @@ public class RestDataAccess extends DataAccess {
       String path = null;
       String name = null;
       String value = null;
+      String uri = null;
       OperationIF operOutput = null;
       Builder builder = null;
       Response response = null;
@@ -229,36 +316,45 @@ public class RestDataAccess extends DataAccess {
       jsonInput = operInput.getJSON();
 
       if (_logger.isLoggable(DEBUG_LEVEL)) {
-         _logger.log(DEBUG_LEVEL, "json=''{0}''", new Object[] { jsonInput != null ? jsonInput : NULL });
+         _logger.log(DEBUG_LEVEL, "json=''{0}''",
+            new Object[]{jsonInput != null ? jsonInput : NULL});
       }
 
       /*
-       * Get the "path" - if "path" exists, append to target
+       * Set the "target"
+       * If flag "_haveBaseTarget" is true ...
+       *    _target exists with a base URI, process path options
+       * Else ...
+       *    _target will be null, need to create a target with "uri"
        */
-      if (jsonInput.containsKey(ConstantsIF.PATH)) {
-         path = JSON.getString(jsonInput, ConstantsIF.PATH);
-      }
-
-      /*
-       * Get the "uid" - if "uid" exists, append to target
-       */
-      if (jsonInput.containsKey(ConstantsIF.UID)) {
-         uid = JSON.getString(jsonInput, ConstantsIF.UID);
-      }
-
-      /*
-       * Set the "target" : _target + "path + "uid"
-       */
-      if (path != null) {
-         if (uid != null) {
-            target = _target.path(path).path(uid);
-         } else {
-            target = _target.path(path);
+      if (_haveBaseTarget) {
+         /*
+          * Get "path" - if "path" exists, append to target
+          * Get "uid" - if "uid" exists, append to target
+          */
+         if (jsonInput.containsKey(ConstantsIF.UID)) {
+            uid = JSON.getString(jsonInput, ConstantsIF.UID);
          }
-      } else if (uid != null) {
-         target = _target.path(uid);
+
+         if (jsonInput.containsKey(ConstantsIF.PATH)) {
+            path = JSON.getString(jsonInput, ConstantsIF.PATH);
+         }
+
+         if (path != null) {
+            if (uid != null) {
+               target = _target.path(path).path(uid);
+            } else {
+               target = _target.path(path);
+            }
+         } else if (uid != null) {
+            target = _target.path(uid);
+         } else {
+            target = _target;
+         }
       } else {
-         target = _target;
+         uri = JSON.getString(jsonInput, ConstantsIF.URI);
+
+         target = _client.target(uri);
       }
 
       /*
@@ -307,7 +403,6 @@ public class RestDataAccess extends DataAccess {
       // - if "accept", set accept Type
       // - if "content-type", set content Type
       // - else add to header map
-
       if (jsonInput.containsKey(ConstantsIF.HEADERS)) {
          headers = new MultivaluedHashMap<String, Object>();
 
@@ -321,40 +416,40 @@ public class RestDataAccess extends DataAccess {
 
                   if (!STR.isEmpty(value)) {
                      switch (name) {
-                     case ConstantsIF.ACCEPT: {
-                        switch (value) {
-                        case ConstantsIF.TYPE_JSON: {
-                           acceptType = MediaType.APPLICATION_JSON_TYPE;
+                        case ConstantsIF.ACCEPT: {
+                           switch (value) {
+                              case ConstantsIF.TYPE_JSON: {
+                                 acceptType = MediaType.APPLICATION_JSON_TYPE;
+                                 break;
+                              }
+                              case ConstantsIF.TYPE_URLENCODED: {
+                                 acceptType = MediaType.APPLICATION_FORM_URLENCODED_TYPE;
+                                 break;
+                              }
+                              case ConstantsIF.TYPE_WILDCARD: {
+                                 acceptType = MediaType.WILDCARD_TYPE;
+                                 break;
+                              }
+                           }
                            break;
                         }
-                        case ConstantsIF.TYPE_URLENCODED: {
-                           acceptType = MediaType.APPLICATION_FORM_URLENCODED_TYPE;
+                        case ConstantsIF.CONTENT_TYPE: {
+                           switch (value) {
+                              case ConstantsIF.TYPE_JSON: {
+                                 contentType = MediaType.APPLICATION_JSON_TYPE;
+                                 break;
+                              }
+                              case ConstantsIF.TYPE_URLENCODED: {
+                                 contentType = MediaType.APPLICATION_FORM_URLENCODED_TYPE;
+                                 break;
+                              }
+                           }
                            break;
                         }
-                        case ConstantsIF.TYPE_WILDCARD: {
-                           acceptType = MediaType.WILDCARD_TYPE;
+                        default: {
+                           headers.add(name, value);
                            break;
                         }
-                        }
-                        break;
-                     }
-                     case ConstantsIF.CONTENT_TYPE: {
-                        switch (value) {
-                        case ConstantsIF.TYPE_JSON: {
-                           contentType = MediaType.APPLICATION_JSON_TYPE;
-                           break;
-                        }
-                        case ConstantsIF.TYPE_URLENCODED: {
-                           contentType = MediaType.APPLICATION_FORM_URLENCODED_TYPE;
-                           break;
-                        }
-                        }
-                        break;
-                     }
-                     default: {
-                        headers.add(name, value);
-                        break;
-                     }
                      }
                   }
                }
@@ -389,75 +484,75 @@ public class RestDataAccess extends DataAccess {
        * execute "builder", based on operation type
        */
       switch (oper) {
-      case CREATE: {
-         if (contentType == MediaType.APPLICATION_JSON_TYPE) {
-            jsonData = JSON.getObject(jsonInput, ConstantsIF.DATA);
-
-            if (jsonData != null) {
-               response = builder.post(Entity.entity(jsonData.toString(), contentType));
-            } else {
-               msg = oper.toString() + ": JSON input does not contain a 'data' object";
-            }
-         } else if (contentType == MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
-            if (jsonInput.containsKey(ConstantsIF.FORM)) {
-               form = this.getForm(jsonInput);
-
-               if (form != null) {
-                  response = builder.post(Entity.entity(form, contentType));
-               } else {
-                  msg = oper.toString() + ": URL encoded form is null";
-               }
-            } else {
-               msg = oper.toString() + ": JSON input does not contain a 'form' object";
-            }
-         } else {
-            msg = oper.toString() + ": Undefined MediaType";
-         }
-         break;
-      }
-      case SEARCH:
-      case READ: {
-         response = builder.get();
-         break;
-      }
-      case REPLACE: {
-         if (contentType == MediaType.APPLICATION_JSON_TYPE) {
-            if (jsonInput.containsKey(ConstantsIF.DATA)) {
+         case CREATE: {
+            if (contentType == MediaType.APPLICATION_JSON_TYPE) {
                jsonData = JSON.getObject(jsonInput, ConstantsIF.DATA);
 
-               if (jsonData != null && !jsonData.isEmpty()) {
-                  response = builder.put(Entity.entity(jsonData.toString(), contentType));
+               if (jsonData != null) {
+                  response = builder.post(Entity.entity(jsonData.toString(), contentType));
                } else {
-                  msg = oper.toString() + ": JSON 'data' is null or empty";
+                  msg = oper.toString() + ": JSON input does not contain a 'data' object";
                }
-            } else {
-               msg = oper.toString() + ": JSON input does not contain a 'data' object";
-            }
-         } else if (contentType == MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
-            if (jsonInput.containsKey(ConstantsIF.FORM)) {
-               form = this.getForm(jsonInput);
+            } else if (contentType == MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+               if (jsonInput.containsKey(ConstantsIF.FORM)) {
+                  form = this.getForm(jsonInput);
 
-               if (form != null) {
-                  response = builder.put(Entity.entity(form, contentType));
+                  if (form != null) {
+                     response = builder.post(Entity.entity(form, contentType));
+                  } else {
+                     msg = oper.toString() + ": URL encoded form is null";
+                  }
                } else {
-                  msg = oper.toString() + ": URL encoded form is null";
+                  msg = oper.toString() + ": JSON input does not contain a 'form' object";
                }
             } else {
-               msg = oper.toString() + ": JSON input does not contain a 'form' object";
+               msg = oper.toString() + ": Undefined MediaType";
             }
-         } else {
-            msg = oper.toString() + ": Undefined MediaType";
+            break;
          }
-         break;
-      }
-      case DELETE: {
-         response = builder.delete();
-         break;
-      }
-      default: {
-         msg = "Unsupported operation '" + oper.toString() + "'";
-         break;
-      }
+         case SEARCH:
+         case READ: {
+            response = builder.get();
+            break;
+         }
+         case REPLACE: {
+            if (contentType == MediaType.APPLICATION_JSON_TYPE) {
+               if (jsonInput.containsKey(ConstantsIF.DATA)) {
+                  jsonData = JSON.getObject(jsonInput, ConstantsIF.DATA);
+
+                  if (jsonData != null && !jsonData.isEmpty()) {
+                     response = builder.put(Entity.entity(jsonData.toString(), contentType));
+                  } else {
+                     msg = oper.toString() + ": JSON 'data' is null or empty";
+                  }
+               } else {
+                  msg = oper.toString() + ": JSON input does not contain a 'data' object";
+               }
+            } else if (contentType == MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+               if (jsonInput.containsKey(ConstantsIF.FORM)) {
+                  form = this.getForm(jsonInput);
+
+                  if (form != null) {
+                     response = builder.put(Entity.entity(form, contentType));
+                  } else {
+                     msg = oper.toString() + ": URL encoded form is null";
+                  }
+               } else {
+                  msg = oper.toString() + ": JSON input does not contain a 'form' object";
+               }
+            } else {
+               msg = oper.toString() + ": Undefined MediaType";
+            }
+            break;
+         }
+         case DELETE: {
+            response = builder.delete();
+            break;
+         }
+         default: {
+            msg = "Unsupported operation '" + oper.toString() + "'";
+            break;
+         }
       }
 
       if (msg == null) {
@@ -476,7 +571,7 @@ public class RestDataAccess extends DataAccess {
 
    /**
     * Get HTTP Form from JSON object
-    * 
+    *
     * @param jsonInput JSONObject form data
     * @return Form HTTP form
     */
@@ -511,18 +606,20 @@ public class RestDataAccess extends DataAccess {
 
    /**
     * Get Operation object from HTTP Response
-    * 
-    * @param response  Response object
+    *
+    * @param response Response object
     * @param operInput OperationIF input
     * @return OperationIF output
     */
    private OperationIF getOperationFromResponse(final Response response, final OperationIF operInput) {
       boolean error = false;
       String METHOD = Thread.currentThread().getStackTrace()[1].getMethodName();
-      String uid = null;
+      String uriRequest = null;
+      String uriCreated = null;
       String entity = null;
       String value = null;
       OperationIF operOutput = null;
+      JSONObject jsonInput = null;
       JSONObject jsonOutput = null;
       JSONObject jsonHeaders = null;
 
@@ -534,7 +631,6 @@ public class RestDataAccess extends DataAccess {
          error = true;
 
          operOutput = new Operation(OperationIF.TYPE.NULL);
-         operOutput.setError(error);
          operOutput.setState(STATE.ERROR);
          operOutput.setStatus(METHOD + ": input response is null");
 
@@ -551,275 +647,328 @@ public class RestDataAccess extends DataAccess {
             _logger.log(Level.SEVERE, "input operation is null");
          } else {
             operOutput = new Operation(operInput.getType());
+
+            jsonInput = operInput.getJSON();
+            if (jsonInput != null && !jsonInput.isEmpty()) {
+               uriRequest = JSON.getString(jsonInput, ConstantsIF.URI);
+            }
+            if (STR.isEmpty(uriRequest)) {
+               uriRequest = NULL;
+            }
          }
       }
 
       if (!error && response != null && operInput != null) {
          entity = response.readEntity(String.class);
 
-         if (STR.isEmpty(entity)) {
-            entity = NULL;
-         }
-
          switch (operInput.getType()) {
-         case CREATE: // HTTP POST
-         {
-            switch (response.getStatus()) {
-            case 200: // OK
-            case 201: // CREATED
+            case CREATE: // HTTP POST
             {
-               operOutput.setState(STATE.SUCCESS);
-               operOutput.setStatus("Response: " + response.getStatusInfo().toString());
+               switch (response.getStatus()) {
+                  case 200: // OK
+                  case 201: // CREATED
+                  {
+                     operOutput.setState(STATE.SUCCESS);
+                     operOutput.setStatus("Response: "
+                        + response.getStatusInfo().toString());
 
+                     if (!STR.isEmpty(entity)) {
+                        try {
+                           jsonOutput = this.parseEntity(entity);
+                        } catch (Exception ex) {
+                           operOutput.setStatus(entity);
+                        }
+                     }
+
+                     try {
+                        uriCreated = this.getURIFromResponse(response);
+                     } catch (Exception ex) {
+                        error = true;
+                        operOutput.setError(error);
+                        operOutput.setState(STATE.ERROR);
+                        operOutput.setStatus("Could not get URI from Response: "
+                           + ex.getMessage());
+                     }
+
+                     if (!STR.isEmpty(uriCreated)) {
+                        jsonOutput.put(ConstantsIF.URI, uriCreated);
+                     }
+                     break;
+                  }
+                  case 302: // FOUND (REDIRECT)
+                  {
+                     jsonHeaders = new JSONObject();
+
+                     for (String s : response.getHeaders().keySet()) {
+                        if (!STR.isEmpty(s)) {
+                           value = response.getHeaderString(s);
+                           if (!STR.isEmpty(value)) {
+                              jsonHeaders.put(s, value);
+                           }
+                        }
+                     }
+
+                     jsonOutput.put(ConstantsIF.HEADERS, jsonHeaders);
+
+                     operOutput.setState(STATE.WARNING);
+                     operOutput.setStatus("Redirect: " + response.getStatus()
+                        + ", " + response.getStatusInfo().toString());
+                     break;
+                  }
+                  case 400: // BAD REQUEST
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.FAILED);
+                     operOutput.setStatus("BAD REQUEST: " + response.getStatus()
+                        + ", " + response.getStatusInfo().toString()
+                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     break;
+                  }
+                  case 403: // FORBIDDEN
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.FAILED);
+                     operOutput.setStatus("Forbidden create: "
+                        + response.getStatus()
+                        + ", " + response.getStatusInfo().toString()
+                        + ", Entity='"
+                        + (entity == null ? NULL : entity) + "'");
+                     break;
+                  }
+                  case 404: // NOT FOUND
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.NOTEXIST);
+                     operOutput.setStatus(response.getStatusInfo().toString()
+                        + ", " + uriRequest);
+                     break;
+                  }
+                  default: {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.ERROR);
+                     operOutput.setStatus("Default Response: "
+                        + response.getStatus()
+                        + ", " + response.getStatusInfo().toString()
+                        + ", Entity='"
+                        + (entity == null ? NULL : entity) + "'");
+                     break;
+                  }
+               }
+
+               break;
+            }
+            case READ: // HTTP GET
+            case SEARCH: // HTTP GET
+            {
                if (!STR.isEmpty(entity)) {
                   try {
                      jsonOutput = this.parseEntity(entity);
                   } catch (Exception ex) {
-                     operOutput.setStatus(entity);
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.WARNING);
+                     operOutput.setStatus("Could not parse response entity: "
+                        + ex.getMessage());
                   }
                }
-
-               try {
-                  uid = this.getUidFromResponse(response);
-               } catch (Exception ex) {
-                  error = true;
-                  operOutput.setError(error);
-                  operOutput.setState(STATE.ERROR);
-                  operOutput.setStatus("Could not get Uid from Response: " + ex.getMessage());
-               }
-
-               if (!STR.isEmpty(uid)) {
-                  jsonOutput.put(ConstantsIF.UID, uid);
-               }
-               break;
-            }
-            case 302: // FOUND (REDIRECT)
-            {
-               jsonHeaders = new JSONObject();
-
-               for (String s : response.getHeaders().keySet()) {
-                  if (!STR.isEmpty(s)) {
-                     value = response.getHeaderString(s);
-                     if (!STR.isEmpty(value)) {
-                        jsonHeaders.put(s, value);
+               if (!error) {
+                  switch (response.getStatus()) {
+                     case 200: // OK
+                     {
+                        operOutput.setError(false);
+                        operOutput.setState(STATE.SUCCESS);
+                        operOutput.setStatus("Found document");
+                        break;
+                     }
+                     case 401: // UNAUTHORIZED
+                     {
+                        error = true;
+                        operOutput.setError(error);
+                        operOutput.setState(STATE.NOTAUTHORIZED);
+                        operOutput.setStatus(response.getStatusInfo() + ": '"
+                           + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                        break;
+                     }
+                     case 400: // BAD REQUEST
+                     {
+                        error = true;
+                        operOutput.setError(error);
+                        operOutput.setState(STATE.FAILED);
+                        operOutput.setStatus("BAD REQUEST: " + response.getStatus()
+                           + ", " + response.getStatusInfo().toString()
+                           + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                        break;
+                     }
+                     case 403: // FORBIDDEN
+                     {
+                        error = true;
+                        operOutput.setError(error);
+                        operOutput.setState(STATE.FAILED);
+                        operOutput.setStatus("Forbidden read/search: "
+                           + response.getStatus() + ", " + response.getStatusInfo().toString()
+                           + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                        break;
+                     }
+                     case 404: // NOT FOUND
+                     {
+                        error = true;
+                        operOutput.setError(error);
+                        operOutput.setState(STATE.NOTEXIST);
+                        operOutput.setStatus(response.getStatusInfo().toString()
+                           + ", " + uriRequest);
+                        break;
+                     }
+                     default: {
+                        error = true;
+                        operOutput.setError(error);
+                        operOutput.setState(STATE.ERROR);
+                        operOutput.setStatus("Default Response: " + response.getStatus()
+                           + ", " + response.getStatusInfo().toString()
+                           + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                        break;
                      }
                   }
                }
+               break;
+            }
+            case REPLACE: // HTTP PUT
+            {
+               switch (response.getStatus()) {
+                  case 200: // OK
+                  {
+                     operOutput.setState(STATE.SUCCESS);
+                     operOutput.setStatus("Replaced document");
+                     break;
+                  }
+                  case 201: // CREATED
+                  {
+                     try {
+                        uriCreated = this.getURIFromResponse(response);
+                     } catch (Exception ex) {
+                        error = true;
+                        operOutput.setError(error);
+                        operOutput.setState(STATE.ERROR);
+                        operOutput.setStatus("Couldnot get Uid from Response: "
+                           + ex.getMessage());
+                     }
 
-               jsonOutput.put(ConstantsIF.HEADERS, jsonHeaders);
-
-               operOutput.setState(STATE.WARNING);
-               operOutput.setStatus("Redirect: " + response.getStatus() + ", " + response.getStatusInfo().toString());
+                     if (!STR.isEmpty(uriCreated)) {
+                        jsonOutput.put(ConstantsIF.URI, uriCreated);
+                        operOutput.setState(STATE.SUCCESS);
+                        operOutput.setStatus("Created document");
+                     }
+                     break;
+                  }
+                  case 204: // NO CONTENT
+                  {
+                     operOutput.setState(STATE.SUCCESS);
+                     operOutput.setStatus("Replaced document");
+                     break;
+                  }
+                  case 400: // BAD REQUEST
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.FAILED);
+                     operOutput.setStatus("BAD REQUEST: " + response.getStatus()
+                        + ", " + response.getStatusInfo().toString()
+                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     break;
+                  }
+                  case 403: // FORBIDDEN
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.FAILED);
+                     operOutput.setStatus("Forbidden replace: " + response.getStatus()
+                        + ", " + response.getStatusInfo().toString()
+                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     break;
+                  }
+                  case 404: // NOT FOUND
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.NOTEXIST);
+                     operOutput.setStatus(response.getStatusInfo().toString()
+                        + ", " + uriRequest);
+                     break;
+                  }
+                  default: {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.ERROR);
+                     operOutput.setStatus("Default Response: " + response.getStatus()
+                        + ", " + response.getStatusInfo().toString()
+                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     break;
+                  }
+               }
                break;
             }
-            case 400: // BAD REQUEST
+            case DELETE: // HTTP DELETE
             {
-               error = true;
-               operOutput.setState(STATE.FAILED);
-               operOutput.setStatus("BAD REQUEST: " + response.getStatus() + ", " + response.getStatusInfo().toString()
-                     + ", Entity='" + entity + "'");
-               break;
-            }
-            case 403: // FORBIDDEN
-            {
-               error = true;
-               operOutput.setState(STATE.FAILED);
-               operOutput.setStatus("Forbidden create: " + response.getStatus() + ", "
-                     + response.getStatusInfo().toString() + ", Entity='" + entity + "'");
-               break;
-            }
-            case 404: // NOT FOUND
-            {
-               error = true;
-               operOutput.setState(STATE.NOTEXIST);
-               operOutput.setStatus("NOT FOUND: '" + response.readEntity(String.class) + "'");
+               switch (response.getStatus()) {
+                  case 200: // OK
+                  case 204: // NO CONTENT
+                  {
+                     operOutput.setError(false);
+                     operOutput.setState(STATE.SUCCESS);
+                     operOutput.setStatus("Deleted document");
+                     break;
+                  }
+                  case 400: // BAD REQUEST
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.FAILED);
+                     operOutput.setStatus("BAD REQUEST: " + response.getStatus()
+                        + ", " + response.getStatusInfo().toString()
+                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     break;
+                  }
+                  case 403: // FORBIDDEN
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.FAILED);
+                     operOutput.setStatus("Forbidden delete: "
+                        + response.getStatusInfo().toString());
+                     break;
+                  }
+                  case 404: // NOT FOUND
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.NOTEXIST);
+                     operOutput.setStatus(response.getStatusInfo().toString()
+                        + ", " + uriRequest);
+                     break;
+                  }
+                  default: {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.ERROR);
+                     operOutput.setStatus("Default Response: " + response.getStatus()
+                        + ", " + response.getStatusInfo().toString() + ", Entity='"
+                        + (entity == null ? NULL : entity) + "'");
+                     break;
+                  }
+               }
                break;
             }
             default: {
-               error = true;
-               operOutput.setState(STATE.ERROR);
-               operOutput.setStatus("Default Response: " + response.getStatus() + ", "
-                     + response.getStatusInfo().toString() + ", Entity='" + entity + "'");
-               break;
-            }
-            }
-
-            break;
-         }
-         case READ: // HTTP GET
-         case SEARCH: // HTTP GET
-         {
-            if (!STR.isEmpty(entity)) {
-               try {
-                  jsonOutput = this.parseEntity(entity);
-               } catch (Exception ex) {
-                  error = true;
-                  operOutput.setStatus("Could not parse response entity: " + ex.getMessage());
-               }
-            }
-            switch (response.getStatus()) {
-            case 200: // OK
-            {
-               operOutput.setError(false);
-               operOutput.setState(STATE.SUCCESS);
-               operOutput.setStatus("Found document");
-               break;
-            }
-            case 401: // UNAUTHORIZED
-            {
                error = true;
                operOutput.setError(error);
-               operOutput.setState(STATE.NOTAUTHORIZED);
-               operOutput.setStatus(response.getStatusInfo() + ": '" + entity != null ? entity : "(null)" + "'");
-               break;
-            }
-            case 400: // BAD REQUEST
-            {
-               error = true;
                operOutput.setState(STATE.FAILED);
-               operOutput.setStatus("BAD REQUEST: " + response.getStatus() + ", " + response.getStatusInfo().toString()
-                     + ", Entity='" + entity + "'");
+               operOutput.setStatus("Operation type not supported: "
+                  + operInput.getType().toString());
                break;
             }
-            case 403: // FORBIDDEN
-            {
-               error = true;
-               operOutput.setState(STATE.FAILED);
-               operOutput.setStatus("Forbidden read/search: " + response.getStatus() + ", "
-                     + response.getStatusInfo().toString() + ", Entity='" + entity + "'");
-               break;
-            }
-            case 404: // NOT FOUND
-            {
-               error = true;
-               operOutput.setState(STATE.NOTEXIST);
-               operOutput.setStatus(response.getStatusInfo() + ": '" + entity != null ? entity : "(null)" + "'");
-               break;
-            }
-            default: {
-               error = true;
-               operOutput.setState(STATE.ERROR);
-               operOutput.setStatus("Default Response: " + response.getStatus() + ", "
-                     + response.getStatusInfo().toString() + ", Entity='" + entity + "'");
-               break;
-            }
-            }
-            break;
-         }
-         case REPLACE: // HTTP PUT
-         {
-            switch (response.getStatus()) {
-            case 200: // OK
-            {
-               operOutput.setState(STATE.SUCCESS);
-               operOutput.setStatus("Replaced document");
-               break;
-            }
-            case 201: // CREATED
-            {
-               try {
-                  uid = this.getUidFromResponse(response);
-               } catch (Exception ex) {
-                  error = true;
-                  operOutput.setError(error);
-                  operOutput.setState(STATE.ERROR);
-                  operOutput.setStatus("Couldnot get Uid from Response: " + ex.getMessage());
-               }
-
-               if (!STR.isEmpty(uid)) {
-                  jsonOutput.put(ConstantsIF.UID, uid);
-                  operOutput.setState(STATE.SUCCESS);
-                  operOutput.setStatus("Created document");
-               }
-               break;
-            }
-            case 204: // NO CONTENT
-            {
-               operOutput.setState(STATE.SUCCESS);
-               operOutput.setStatus("Replaced document");
-               break;
-            }
-            case 400: // BAD REQUEST
-            {
-               error = true;
-               operOutput.setState(STATE.FAILED);
-               operOutput.setStatus("BAD REQUEST: " + response.getStatus() + ", " + response.getStatusInfo().toString()
-                     + ", Entity='" + entity + "'");
-               break;
-            }
-            case 403: // FORBIDDEN
-            {
-               error = true;
-               operOutput.setState(STATE.FAILED);
-               operOutput.setStatus("Forbidden replace: " + response.getStatus() + ", "
-                     + response.getStatusInfo().toString() + ", Entity='" + entity + "'");
-               break;
-            }
-            case 404: // NOT FOUND
-            {
-               error = true;
-               operOutput.setState(STATE.NOTEXIST);
-               operOutput.setStatus("Not Found");
-               break;
-            }
-            default: {
-               error = true;
-               operOutput.setState(STATE.ERROR);
-               operOutput.setStatus("Default Response: " + response.getStatus() + ", "
-                     + response.getStatusInfo().toString() + ", Entity='" + entity + "'");
-               break;
-            }
-            }
-            break;
-         }
-         case DELETE: // HTTP DELETE
-         {
-            switch (response.getStatus()) {
-            case 200: // OK
-            case 204: // NO CONTENT
-            {
-               operOutput.setState(STATE.SUCCESS);
-               operOutput.setStatus("Deleted document");
-               break;
-            }
-            case 400: // BAD REQUEST
-            {
-               error = true;
-               operOutput.setState(STATE.FAILED);
-               operOutput.setStatus("BAD REQUEST: " + response.getStatus() + ", " + response.getStatusInfo().toString()
-                     + ", Entity='" + entity + "'");
-               break;
-            }
-            case 403: // FORBIDDEN
-            {
-               error = true;
-               operOutput.setState(STATE.FAILED);
-               operOutput.setStatus("Forbidden delete: " + response.getStatusInfo().toString());
-               break;
-            }
-            case 404: // NOT FOUND
-            {
-               error = true;
-               operOutput.setState(STATE.NOTEXIST);
-               operOutput.setStatus("Not Found");
-               break;
-            }
-            default: {
-               error = true;
-               operOutput.setState(STATE.ERROR);
-               operOutput.setStatus("Default Response: " + response.getStatus() + ", "
-                     + response.getStatusInfo().toString() + ", Entity='" + entity + "'");
-               break;
-            }
-            }
-            break;
-         }
-         default: {
-            error = true;
-            operOutput.setState(STATE.FAILED);
-            operOutput.setStatus("Operation type not supported: " + operInput.getType().toString());
-            break;
-         }
          }
       }
 
@@ -827,7 +976,9 @@ public class RestDataAccess extends DataAccess {
 
       if (_logger.isLoggable(DEBUG_LEVEL)) {
          _logger.log(DEBUG_LEVEL, "output=''{0}'', json=''{1}''",
-               new Object[] { operOutput.toString(), jsonOutput == null ? NULL : jsonOutput.toString() });
+            new Object[]{
+               operOutput.toString(),
+               jsonOutput == null ? NULL : jsonOutput.toString()});
       }
 
       _logger.exiting(CLASS, METHOD);
@@ -841,7 +992,7 @@ public class RestDataAccess extends DataAccess {
     * config.getProperties().put(ClientProperties.FOLLOW_REDIRECTS, true);
     * com.sun.jersey.api.client.Client client = Client.create(config);
     * client.setFollowRedirects(true);
-    * 
+    *
     * @throws Exception
     */
    private void init() throws Exception {
@@ -851,15 +1002,20 @@ public class RestDataAccess extends DataAccess {
 
       _logger.entering(CLASS, METHOD);
 
-      base.append(this.getParamNotEmpty(PARAM_PROTOCOL)).append("://").append(this.getParamNotEmpty(PARAM_HOST))
-            .append(":").append(this.getParamNotEmpty(PARAM_PORT));
-
       config = new ClientConfig();
       config.property(ClientProperties.FOLLOW_REDIRECTS, false);
 
       _client = ClientBuilder.newClient(config);
 
-      _target = _client.target(base.toString()).path(this.getParamNotEmpty(PARAM_PATH));
+      if (_haveBaseTarget) {
+         base.append(this.getParamNotEmpty(PARAM_PROTOCOL))
+            .append("://")
+            .append(this.getParamNotEmpty(PARAM_HOST))
+            .append(":")
+            .append(this.getParamNotEmpty(PARAM_PORT));
+
+         _target = _client.target(base.toString()).path(this.getParamNotEmpty(PARAM_PATH));
+      }
 
       _parser = new JSONParser();
 
@@ -871,17 +1027,53 @@ public class RestDataAccess extends DataAccess {
       return;
    }
 
+//   /**
+//    * Get unique identifier from HTTP Location header in response
+//    *
+//    * @param response HTTP Response
+//    * @return String unique identifier
+//    * @throws Exception
+//    */
+//   private String getUidFromResponse(Response response) throws Exception {
+//      Object obj = null;
+//      String METHOD = Thread.currentThread().getStackTrace()[1].getMethodName();
+//      String uid = null;
+//      String location = null;
+//      String[] path = null;
+//      MultivaluedMap<String, Object> headers = null;
+//      URL url = null;
+//
+//      _logger.entering(CLASS, METHOD);
+//
+//      headers = response.getHeaders();
+//
+//      obj = headers.getFirst(ConstantsIF.LOCATION);
+//
+//      if (obj != null && obj instanceof String && !STR.isEmpty((String) obj)) {
+//         location = (String) obj;
+//
+//         url = new URL(location);
+//
+//         path = url.getPath().split("/");
+//
+//         uid = path[path.length - 1];
+//      }
+//
+//      _logger.exiting(CLASS, METHOD);
+//
+//      return uid;
+//   }
    /**
-    * Get unique identifier from HTTP Location response
-    * 
+    * Get URI from HTTP Location header in response
+    *
     * @param response HTTP Response
     * @return String unique identifier
     * @throws Exception
     */
-   private String getUidFromResponse(Response response) throws Exception {
+   private String getURIFromResponse(Response response) throws Exception {
       Object obj = null;
       String METHOD = Thread.currentThread().getStackTrace()[1].getMethodName();
-      String uid = null;
+      String uri = null;
       String location = null;
       String[] path = null;
       MultivaluedMap<String, Object> headers = null;
@@ -894,23 +1086,17 @@ public class RestDataAccess extends DataAccess {
       obj = headers.getFirst(ConstantsIF.LOCATION);
 
       if (obj != null && obj instanceof String && !STR.isEmpty((String) obj)) {
-         location = (String) obj;
-
-         url = new URL(location);
-
-         path = url.getPath().split("/");
-
-         uid = path[path.length - 1];
+         uri = (String) obj;
       }
 
       _logger.exiting(CLASS, METHOD);
 
-      return uid;
+      return uri;
    }
 
    /**
     * Convert JSON formatted string to a JSON object
-    * 
+    *
     * @param entity string representing JSON data
     * @return JSONObject
     * @throws Exception
@@ -931,7 +1117,8 @@ public class RestDataAccess extends DataAccess {
                jsonOutput = new JSONObject();
                jsonOutput.put(ConstantsIF.RESULTS, (JSONArray) obj);
             } else {
-               throw new Exception("Parsed entity has an undefined class: " + obj.getClass().getName());
+               throw new Exception("Parsed entity has an undefined class: "
+                  + obj.getClass().getName());
             }
          } else {
             throw new Exception("Parsed entity is null");
