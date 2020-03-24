@@ -81,38 +81,97 @@ This section covers how to use the `TestRestDataAccess.java` program which tests
 (sample test output below)
 
 ```bash
-Dec 19, 2019 8:42:10 PM com.forgerock.frdp.dao.rest.RestDataAccess execute
+Mar 24, 2020 3:11:04 PM com.forgerock.frdp.dao.rest.RestDataAccess execute
+WARNING: com.forgerock.frdp.dao.rest.RestDataAccess:execute: No base target, required attribute 'uri' is empty
+====
+==== FAIL TEST     : create 0, DAO constructor, missing uri test
+==== URI Location  : null
+==== Create output : error=true; state=FAILED; status='com.forgerock.frdp.dao.rest.RestDataAccess:execute: No base target, required attribute 'uri' is empty'; params=none
+==== Create json   : {}
+====
+====
+==== SUCCESS TEST  : create 1, DAO constructor, with uri
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/a40484be-e1c1-4d40-891e-99057b2e1339
+==== Create output : error=false; state=SUCCESS; status='Response: Created'; params=none
+==== Create json   : {"uri":"https:\/\/idp.frdpcloud.com\/content-server\/rest\/content-server\/content\/a40484be-e1c1-4d40-891e-99057b2e1339"}
+====
+Mar 24, 2020 3:11:05 PM com.forgerock.frdp.dao.rest.RestDataAccess execute
 WARNING: com.forgerock.frdp.dao.rest.RestDataAccess:execute: JSON Input is null or empty
 ====
-==== Create output: error=false; state=SUCCESS; status='(NULL)'; params=none
-==== Create json:   {"uid":"298a853d-60a3-4d65-9853-30bf8fdb1698"}
+==== FAIL TEST     : create 2, DAO constructor params, null input
+==== URI Location  : null
+==== Create output : error=true; state=FAILED; status='com.forgerock.frdp.dao.rest.RestDataAccess:execute: JSON Input is null or empty'; params=none
+==== Create json   : {}
 ====
 ====
-==== Create output: error=false; state=SUCCESS; status='(NULL)'; params=none
-==== Create json:   {"uid":"cb7d8326-6a82-46a1-ac79-582dd0152980"}
+==== SUCCESS TEST  : create 3, DAO constructor params, with query parameters
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/2ec9d6ec-a941-4910-a6dd-356d0981fd25
+==== Create output : error=false; state=SUCCESS; status='Response: Created'; params=none
+==== Create json   : {"uri":"https:\/\/idp.frdpcloud.com\/content-server\/rest\/content-server\/content\/2ec9d6ec-a941-4910-a6dd-356d0981fd25"}
 ====
 ====
-==== Read output: error=false; state=SUCCESS; status='Found document'; params=none
-==== Read json:   {"uid":"cb7d8326-6a82-46a1-ac79-582dd0152980","data":{"firstname":"Jack","organization":"CTU","title":"Agent","lastname":"Bauer","info":{"package":"com.forgerock.frdp.dao.rest","filename":"TestMongoDataAccess.java","classname":"TestMongoDataAccess","language":"java"}},"timestamps":{"created":"2019-12-19T20:42:12.861-0600"}}
+==== SUCCESS TEST  : create 4, DAO constructor params, with headers
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/d73f6ca7-87fa-4678-82d8-1949600559c2
+==== Create output : error=false; state=SUCCESS; status='Response: Created'; params=none
+==== Create json   : {"uri":"https:\/\/idp.frdpcloud.com\/content-server\/rest\/content-server\/content\/d73f6ca7-87fa-4678-82d8-1949600559c2"}
 ====
 ====
-==== Replace output: error=false; state=NOTEXIST; status='Not Found'; params=none
-==== Replace json:   {}
+==== SUCCESS TEST  : create 5, DAO constructor params, with cookies
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/a5316f3a-3134-4462-9079-872116fc5ea5
+==== Create output : error=false; state=SUCCESS; status='Response: Created'; params=none
+==== Create json   : {"uri":"https:\/\/idp.frdpcloud.com\/content-server\/rest\/content-server\/content\/a5316f3a-3134-4462-9079-872116fc5ea5"}
 ====
 ====
+==== SUCCESS TEST  : create 6, DAO default constructor
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/bd3ac0c2-eb62-43ab-9ca8-3b3efa0a7ada
+==== Create output : error=false; state=SUCCESS; status='Response: Created'; params=none
+==== Create json   : {"uri":"https:\/\/idp.frdpcloud.com\/content-server\/rest\/content-server\/content\/bd3ac0c2-eb62-43ab-9ca8-3b3efa0a7ada"}
+====
+====
+==== FAIL TEST     : read 1, DAO constructor params, bad uri
+==== URI Location  : http://bad.example.com/app/rest/content/BadId123
+==== Read output   : error=true; state=WARNING; status='Could not parse response entity: null'; params=none
+==== Read json     : {}
+====
+====
+==== SUCCESS TEST  : read 2, DAO constructor params, good uri
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/bd3ac0c2-eb62-43ab-9ca8-3b3efa0a7ada
+==== Read output   : error=false; state=SUCCESS; status='Found document'; params=none
+==== Read json     : {"uid":"bd3ac0c2-eb62-43ab-9ca8-3b3efa0a7ada","data":{"firstname":"Jack","organization":"CTU","title":"Agent","lastname":"Bauer","info":{"package":"com.forgerock.frdp.dao.rest","filename":"TestMongoDataAccess.java","classname":"TestMongoDataAccess","language":"java"}},"timestamps":{"created":"2020-03-24T15:11:05.820-0500"}}
+====
+====
+==== FAIL TEST     : replace 1, DAO constructor params, bad uri
+==== URI Location  : http://bad.example.com/app/rest/content/BadId123
 ==== Replace output: error=false; state=SUCCESS; status='Replaced document'; params=none
-==== Replace json:   {}
+==== Replace json  : {}
 ====
 ====
-==== Read output: error=false; state=SUCCESS; status='Found document'; params=none
-==== Read json:   {"uid":"cb7d8326-6a82-46a1-ac79-582dd0152980","data":{"firstname":"Jack","organization":"CTU","comment":"Created from Test for MongoDataAccess class","title":"Agent","lastname":"Bauer","info":{"package":"com.forgerock.frdp.dao.rest","filename":"TestMongoDataAccess.java","classname":"TestMongoDataAccess","language":"java"},"status":"Updated"},"timestamps":{"created":"2019-12-19T20:42:12.861-0600","updated":"2019-12-19T20:42:12.901-0600"}}
+==== SUCCESS TEST  : replace 2, DAO constructor params
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/bd3ac0c2-eb62-43ab-9ca8-3b3efa0a7ada
+==== Replace output: error=false; state=SUCCESS; status='Replaced document'; params=none
+==== Replace json  : {}
 ====
 ====
-==== Delete output: error=false; state=SUCCESS; status='Deleted document'; params=none
-==== Delete json:   {}
+==== SUCCESS TEST  : read 3, DAO constructor params, after a replace
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/bd3ac0c2-eb62-43ab-9ca8-3b3efa0a7ada
+==== Read output   : error=false; state=SUCCESS; status='Found document'; params=none
+==== Read json     : {"uid":"bd3ac0c2-eb62-43ab-9ca8-3b3efa0a7ada","data":{"firstname":"Jack","organization":"CTU","comment":"Created from Test for MongoDataAccess class","title":"Agent","lastname":"Bauer","info":{"package":"com.forgerock.frdp.dao.rest","filename":"TestMongoDataAccess.java","classname":"TestMongoDataAccess","language":"java"},"status":"Updated"},"timestamps":{"created":"2020-03-24T15:11:05.820-0500","updated":"2020-03-24T15:11:06.647-0500"}}
 ====
 ====
+==== SUCCESS TEST  : delete 1, DAO constructor params
+==== URI Location  : https://idp.frdpcloud.com/content-server/rest/content-server/content/bd3ac0c2-eb62-43ab-9ca8-3b3efa0a7ada
+==== Delete output : error=false; state=SUCCESS; status='Deleted document'; params=none
+==== Delete json   : {}
+====
+====
+==== SUCCESS TEST : search 1, DAO constructor params
 ==== Search output: error=false; state=SUCCESS; status='Found document'; params=none
-==== Search json:   {"quantity":7,"results":["6c207df6-9331-4070-9790-58d8177aa134","3513f798-b39f-4a17-ac6c-855bd40cae35","dca1af46-cfea-4af6-98ba-3334036623c7","5831b709-78d7-448d-9a7d-a48c9f71f8d4","298a853d-60a3-4d65-9853-30bf8fdb1698","522747e3-dac9-4acf-8f9b-eb69e48fa1b5","8566f773-ff2a-4601-bb45-f3fe4b4f0cd5"]}
+==== Search json  : {"quantity":4,"results":["a40484be-e1c1-4d40-891e-99057b2e1339","2ec9d6ec-a941-4910-a6dd-356d0981fd25","d73f6ca7-87fa-4678-82d8-1949600559c2","a5316f3a-3134-4462-9079-872116fc5ea5"]}
+====
+====
+==== SUCCESS TEST : search 2, DAO default constructor
+==== URI Base     : https://idp.frdpcloud.com:443/content-server/rest/content-server/content
+==== Search output: error=false; state=SUCCESS; status='Found document'; params=none
+==== Search json  : {"quantity":4,"results":["a40484be-e1c1-4d40-891e-99057b2e1339","2ec9d6ec-a941-4910-a6dd-356d0981fd25","d73f6ca7-87fa-4678-82d8-1949600559c2","a5316f3a-3134-4462-9079-872116fc5ea5"]}
 ====
 ```
