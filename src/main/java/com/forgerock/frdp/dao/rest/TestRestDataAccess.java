@@ -18,7 +18,7 @@ import org.json.simple.JSONObject;
  * @author Scott Fehrman, ForgeRock, Inc.
  */
 public class TestRestDataAccess {
-   
+
    private static final String PROTOCOL = "https";
    private static final String HOST = "uma.example.com";
    private static final String PORT = "443";
@@ -71,7 +71,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.CREATE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == true : "error should be true";
 
@@ -110,7 +114,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.CREATE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -142,7 +150,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.CREATE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput); // bad create null input test
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == true : "error should be true";
 
@@ -180,7 +192,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.CREATE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -215,7 +231,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.CREATE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -250,7 +270,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.CREATE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -282,7 +306,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.CREATE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -311,7 +339,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.READ);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput); // bad read test
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == true : "error should be true";
 
@@ -333,7 +365,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.READ);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -370,7 +406,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.REPLACE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput);
+      } catch (Exception ex) {
+         System.out.println("Caught the error: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == true : "error should be true";
 
@@ -393,7 +433,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.REPLACE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -415,7 +459,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.READ);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -440,7 +488,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.DELETE);
       operInput.setJSON(jsonInput);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -468,7 +520,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.SEARCH);
       operInput.setJSON(jsonData);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
@@ -490,7 +546,11 @@ public class TestRestDataAccess {
       operInput = new Operation(OperationIF.TYPE.SEARCH);
       operInput.setJSON(jsonData);
 
-      operOutput = dao.execute(operInput);
+      try {
+         operOutput = dao.execute(operInput); // bad create, missing "uri" test
+      } catch (Exception ex) {
+         System.out.println("Caught exception: " + ex.getMessage());
+      }
 
       assert operOutput.isError() == false : "error should be false";
 
