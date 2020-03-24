@@ -51,17 +51,21 @@ This section covers how to use the `TestRestDataAccess.java` program which tests
 
 1. Edit the test program \
 `vi src/main/java/com/forgerock/frdp/dao/rest/TestRestDataAccess.java`
-1. Set the `RestDataAccess` parameters: \
+1. Make sure the following variables match your deployment for the **Content Server**: \
+`PROTOCOL`: Either `http` or `https` \
+`HOST`: The Fully Qualified Domain Name of where the Content Server is running *("127.0.0.1" might work)* \
+`PORT`: Port, on the HOST, that is listening for connections\
+`PATH`: Relative URL for the Content Server end-point that is handing the MongoDB database: `content-server` and the MongoDB collection: `content`\
 **Before:** \
-`public static final String PARAM_PROTOCOL = "protocol";` \
-`public static final String PARAM_HOST = "host";` \
-`public static final String PARAM_PORT = "port"` \
-`public static final String PARAM_PATH = "path"` \
+`private static final String PROTOCOL = "https";` \
+`private static final String HOST = "uma.example.com";` \
+`private static final String PORT = "443";` \
+`private static final String PATH = "content-server/rest/content-server/content";` \
 **After:** \
-`public static final String PARAM_PROTOCOL = "https";` \
-`public static final String PARAM_HOST = "FQDN";` \
-`public static final String PARAM_PORT = "443"` \
-`public static final String PARAM_PATH = "TOMCAT_DEPLOYMENT/content-server/rest/content-server/content"` \
+`private static final String PROTOCOL = "https";` \
+`private static final String HOST = "FQDN";` \
+`private static final String PORT = "443";` \
+`private static final String PATH = "content-server/rest/content-server/content";` \
 1. Build the project with *Maven* \
 `mvn clean compile install`
 

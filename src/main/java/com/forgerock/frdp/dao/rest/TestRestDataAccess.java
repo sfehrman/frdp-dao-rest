@@ -20,7 +20,7 @@ import org.json.simple.JSONObject;
 public class TestRestDataAccess {
    
    private static final String PROTOCOL = "https";
-   private static final String HOST = "uma.example.com"; // "uma.example.com"
+   private static final String HOST = "uma.example.com";
    private static final String PORT = "443";
    private static final String PATH = "content-server/rest/content-server/content";
 
