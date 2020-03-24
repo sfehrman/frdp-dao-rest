@@ -53,17 +53,17 @@ This section covers how to use the `TestRestDataAccess.java` program which tests
 `vi src/main/java/com/forgerock/frdp/dao/rest/TestRestDataAccess.java`
 1. Set the `RestDataAccess` parameters: \
 **Before:** \
-`params.put(RestDataAccess.PARAM_PROTOCOL, "https");` \
-`params.put(RestDataAccess.PARAM_HOST, "127.0.0.1");` \
-`params.put(RestDataAccess.PARAM_PORT, "443");` \
-`params.put(RestDataAccess.PARAM_PATH, "tomcat/content/rest/content-server/content");` \
+`public static final String PARAM_PROTOCOL = "protocol";` \
+`public static final String PARAM_HOST = "host";` \
+`public static final String PARAM_PORT = "port"` \
+`public static final String PARAM_PATH = "path"` \
 **After:** \
-`params.put(RestDataAccess.PARAM_PROTOCOL, "https");` \
-`params.put(RestDataAccess.PARAM_HOST, "FQDN");` \
-`params.put(RestDataAccess.PARAM_PORT, "443");` \
-`params.put(RestDataAccess.PARAM_PATH, "TOMCAT_DEPLOYMENT/content/rest/content-server/content");` \
+`public static final String PARAM_PROTOCOL = "https";` \
+`public static final String PARAM_HOST = "FQDN";` \
+`public static final String PARAM_PORT = "443"` \
+`public static final String PARAM_PATH = "TOMCAT_DEPLOYMENT/content-server/rest/content-server/content"` \
 1. Build the project with *Maven* \
-`mvn clean compile package install`
+`mvn clean compile install`
 
 ## Edit the `test.sh` script:
 
