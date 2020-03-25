@@ -75,9 +75,8 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
-
-      assert operOutput.isError() == true : "error should be true";
 
       jsonOutput = operOutput.getJSON();
 
@@ -118,6 +117,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -154,6 +154,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == true : "error should be true";
@@ -196,6 +197,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -235,6 +237,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -274,6 +277,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -310,6 +314,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -343,6 +348,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == true : "error should be true";
@@ -369,6 +375,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -410,6 +417,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput);
       } catch (Exception ex) {
          System.out.println("Caught the error: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == true : "error should be true";
@@ -437,6 +445,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -463,6 +472,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -492,6 +502,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -524,6 +535,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";
@@ -550,6 +562,7 @@ public class TestRestDataAccess {
          operOutput = dao.execute(operInput); // bad create, missing "uri" test
       } catch (Exception ex) {
          System.out.println("Caught exception: " + ex.getMessage());
+         operOutput = new Operation(operInput.getType());
       }
 
       assert operOutput.isError() == false : "error should be false";

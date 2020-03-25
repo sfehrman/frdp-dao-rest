@@ -11,7 +11,6 @@ import com.forgerock.frdp.dao.Operation;
 import com.forgerock.frdp.dao.OperationIF;
 import com.forgerock.frdp.utils.JSON;
 import com.forgerock.frdp.utils.STR;
-import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1027,42 +1026,6 @@ public class RestDataAccess extends DataAccess {
       return;
    }
 
-//   /**
-//    * Get unique identifier from HTTP Location header in response
-//    *
-//    * @param response HTTP Response
-//    * @return String unique identifier
-//    * @throws Exception
-//    */
-//   private String getUidFromResponse(Response response) throws Exception {
-//      Object obj = null;
-//      String METHOD = Thread.currentThread().getStackTrace()[1].getMethodName();
-//      String uid = null;
-//      String location = null;
-//      String[] path = null;
-//      MultivaluedMap<String, Object> headers = null;
-//      URL url = null;
-//
-//      _logger.entering(CLASS, METHOD);
-//
-//      headers = response.getHeaders();
-//
-//      obj = headers.getFirst(ConstantsIF.LOCATION);
-//
-//      if (obj != null && obj instanceof String && !STR.isEmpty((String) obj)) {
-//         location = (String) obj;
-//
-//         url = new URL(location);
-//
-//         path = url.getPath().split("/");
-//
-//         uid = path[path.length - 1];
-//      }
-//
-//      _logger.exiting(CLASS, METHOD);
-//
-//      return uid;
-//   }
    /**
     * Get URI from HTTP Location header in response
     *
@@ -1074,10 +1037,7 @@ public class RestDataAccess extends DataAccess {
       Object obj = null;
       String METHOD = Thread.currentThread().getStackTrace()[1].getMethodName();
       String uri = null;
-      String location = null;
-      String[] path = null;
       MultivaluedMap<String, Object> headers = null;
-      URL url = null;
 
       _logger.entering(CLASS, METHOD);
 
