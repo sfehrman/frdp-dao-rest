@@ -40,8 +40,16 @@ mvn install
 
 Packages are add to the user's home folder: 
 
-`~/.m2/repository/com/forgerock/frdp/frdp-dao-rest`
+`find ~/.m2/repository/com/forgerock/frdp/frdp-dao-rest`
 
+```bash
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.1.0
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.1.0/frdp-dao-rest-1.1.0.pom
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.1.0/frdp-dao-rest-1.1.0.jar
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.1.0/_remote.repositories
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/maven-metadata-local.xml
+```
 
 # Test
 
