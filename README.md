@@ -30,12 +30,10 @@ The following items must be completed, in order:
 1. [frdp-content-server](https://github.com/ForgeRock/frdp-content-server) ... clone / download then install using *Maven* (`mvn`)
 
 
-Run *Maven* (`mvn`) processes to clean, compile and install the package:
+Run *Maven* (`mvn`) processes to: clean, compile and install the package:
 
 ```bash
-mvn clean
-mvn compile
-mvn install
+mvn clean compile install
 ```
 
 Packages are add to the user's home folder: 
