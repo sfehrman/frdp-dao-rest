@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.forgerock.frdp</groupId>
     <artifactId>frdp-dao-rest</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <groupId>com.forgerock.frdp</groupId>
             <artifactId>frdp-framework</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -26,6 +26,11 @@
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
             <version>2.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.2</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.hk2</groupId>
