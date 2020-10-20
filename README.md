@@ -17,7 +17,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 The following items must be installed:
 
 1. [Apache Maven](https://maven.apache.org/)
-1. [Java Development Kit 8](https://openjdk.java.net/)
+1. [Java Development Kit 11](https://openjdk.java.net/projects/jdk/11/)
 
 # Build
 
@@ -42,11 +42,10 @@ Packages are add to the user's home folder:
 
 ```bash
 /Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest
-/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.1.0
-/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.1.0/frdp-dao-rest-1.1.0.pom
-/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.1.0/frdp-dao-rest-1.1.0.jar
-/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.1.0/_remote.repositories
-/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/maven-metadata-local.xml
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.2.0
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.2.0/frdp-dao-rest-1.2.0.pom
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.2.0/frdp-dao-rest-1.2.0.jar
+/Users/scott.fehrman/.m2/repository/com/forgerock/frdp/frdp-dao-rest/1.2.0/_remote.repositories
 ```
 
 # Test
