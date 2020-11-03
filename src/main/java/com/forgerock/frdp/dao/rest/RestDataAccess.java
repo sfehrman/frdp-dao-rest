@@ -415,7 +415,7 @@ public class RestDataAccess extends DataAccess {
 
                   if (!STR.isEmpty(value)) {
                      switch (name) {
-                        case ConstantsIF.ACCEPT: {
+                        case ConstantsIF.HDR_ACCEPT: {
                            switch (value) {
                               case ConstantsIF.TYPE_JSON: {
                                  acceptType = MediaType.APPLICATION_JSON_TYPE;
@@ -432,7 +432,7 @@ public class RestDataAccess extends DataAccess {
                            }
                            break;
                         }
-                        case ConstantsIF.CONTENT_TYPE: {
+                        case ConstantsIF.HDR_CONTENT_TYPE: {
                            switch (value) {
                               case ConstantsIF.TYPE_JSON: {
                                  contentType = MediaType.APPLICATION_JSON_TYPE;
@@ -476,7 +476,11 @@ public class RestDataAccess extends DataAccess {
       }
 
       if (headers != null && !headers.isEmpty()) {
-         builder = builder.headers(headers);
+         for (String key : headers.keySet()) {
+            if (!STR.isEmpty(key)) {
+               builder = builder.header(key, headers.getFirst(key));
+            }
+         }
       }
 
       /*
@@ -968,6 +972,14 @@ public class RestDataAccess extends DataAccess {
                   + operInput.getType().toString());
                break;
             }
+         }
+         
+         if (response.getStatus() == 400 || response.getStatus() >= 500) {
+            _logger.log(Level.SEVERE, "{0}, {1}, Entity=''{2}''", 
+               new Object[]{
+                  response.getStatus(), 
+                  response.getStatusInfo().toString(), 
+                  entity == null ? NULL : entity});
          }
       }
 
