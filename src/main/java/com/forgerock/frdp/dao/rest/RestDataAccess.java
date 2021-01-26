@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020, ForgeRock, Inc., All rights reserved
+ * Copyright (c) 2018-2021, ForgeRock, Inc., All rights reserved
  * Use subject to license terms.
  */
 package com.forgerock.frdp.dao.rest;
@@ -621,10 +621,12 @@ public class RestDataAccess extends DataAccess {
       String uriCreated = null;
       String entity = null;
       String value = null;
+      StringBuilder bldrStatus = null;
       OperationIF operOutput = null;
       JSONObject jsonInput = null;
       JSONObject jsonOutput = null;
       JSONObject jsonHeaders = null;
+      JSONObject jsonEntity = null;
 
       _logger.entering(CLASS, METHOD);
 
@@ -664,6 +666,23 @@ public class RestDataAccess extends DataAccess {
       if (!error && response != null && operInput != null) {
          entity = response.readEntity(String.class);
 
+         if (!STR.isEmpty(entity)) {
+            try {
+               jsonEntity = this.parseEntity(entity);
+               jsonOutput = jsonEntity;
+            } catch (Exception ex) {
+               jsonEntity = null;
+            }
+         }
+
+         bldrStatus = new StringBuilder();
+         bldrStatus.append(response.getStatus());
+         bldrStatus.append(", ");
+         bldrStatus.append(response.getStatusInfo().toString());
+         bldrStatus.append(", Entity='");
+         bldrStatus.append(entity == null ? NULL : entity);
+         bldrStatus.append("'");
+
          switch (operInput.getType()) {
             case CREATE: // HTTP POST
             {
@@ -673,15 +692,7 @@ public class RestDataAccess extends DataAccess {
                   {
                      operOutput.setState(STATE.SUCCESS);
                      operOutput.setStatus("Response: "
-                        + response.getStatusInfo().toString());
-
-                     if (!STR.isEmpty(entity)) {
-                        try {
-                           jsonOutput = this.parseEntity(entity);
-                        } catch (Exception ex) {
-                           operOutput.setStatus(entity);
-                        }
-                     }
+                        + bldrStatus.toString());
 
                      try {
                         uriCreated = this.getURIFromResponse(response);
@@ -714,8 +725,8 @@ public class RestDataAccess extends DataAccess {
                      jsonOutput.put(ConstantsIF.HEADERS, jsonHeaders);
 
                      operOutput.setState(STATE.WARNING);
-                     operOutput.setStatus("Redirect: " + response.getStatus()
-                        + ", " + response.getStatusInfo().toString());
+                     operOutput.setStatus("Redirect: "
+                        + bldrStatus.toString());
                      break;
                   }
                   case 400: // BAD REQUEST
@@ -723,9 +734,17 @@ public class RestDataAccess extends DataAccess {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.FAILED);
-                     operOutput.setStatus("BAD REQUEST: " + response.getStatus()
-                        + ", " + response.getStatusInfo().toString()
-                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     operOutput.setStatus("BAD REQUEST: "
+                        + bldrStatus.toString());
+                     break;
+                  }
+                  case 401: // UNAUTHORIZED
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.NOTAUTHORIZED);
+                     operOutput.setStatus("UNAUTHORIZED: "
+                        + bldrStatus.toString());
                      break;
                   }
                   case 403: // FORBIDDEN
@@ -733,11 +752,8 @@ public class RestDataAccess extends DataAccess {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.FAILED);
-                     operOutput.setStatus("Forbidden create: "
-                        + response.getStatus()
-                        + ", " + response.getStatusInfo().toString()
-                        + ", Entity='"
-                        + (entity == null ? NULL : entity) + "'");
+                     operOutput.setStatus("FORBIDDEN: "
+                        + bldrStatus.toString());
                      break;
                   }
                   case 404: // NOT FOUND
@@ -745,19 +761,16 @@ public class RestDataAccess extends DataAccess {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.NOTEXIST);
-                     operOutput.setStatus(response.getStatusInfo().toString()
-                        + ", " + uriRequest);
+                     operOutput.setStatus("NOT FOUND: "
+                        + bldrStatus.toString());
                      break;
                   }
                   default: {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.ERROR);
-                     operOutput.setStatus("Default Response: "
-                        + response.getStatus()
-                        + ", " + response.getStatusInfo().toString()
-                        + ", Entity='"
-                        + (entity == null ? NULL : entity) + "'");
+                     operOutput.setStatus("Default: "
+                        + bldrStatus.toString());
                      break;
                   }
                }
@@ -774,7 +787,7 @@ public class RestDataAccess extends DataAccess {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.WARNING);
-                     operOutput.setStatus("Could not parse response entity: "
+                     operOutput.setStatus("Could not parse response: "
                         + ex.getMessage());
                   }
                }
@@ -787,13 +800,24 @@ public class RestDataAccess extends DataAccess {
                         operOutput.setStatus("Found document");
                         break;
                      }
-                     case 401: // UNAUTHORIZED
+                     case 302: // FOUND (REDIRECT)
                      {
-                        error = true;
-                        operOutput.setError(error);
-                        operOutput.setState(STATE.NOTAUTHORIZED);
-                        operOutput.setStatus(response.getStatusInfo() + ": '"
-                           + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                        jsonHeaders = new JSONObject();
+
+                        for (String s : response.getHeaders().keySet()) {
+                           if (!STR.isEmpty(s)) {
+                              value = response.getHeaderString(s);
+                              if (!STR.isEmpty(value)) {
+                                 jsonHeaders.put(s, value);
+                              }
+                           }
+                        }
+
+                        jsonOutput.put(ConstantsIF.HEADERS, jsonHeaders);
+
+                        operOutput.setState(STATE.WARNING);
+                        operOutput.setStatus("Redirect: "
+                           + bldrStatus.toString());
                         break;
                      }
                      case 400: // BAD REQUEST
@@ -801,9 +825,17 @@ public class RestDataAccess extends DataAccess {
                         error = true;
                         operOutput.setError(error);
                         operOutput.setState(STATE.FAILED);
-                        operOutput.setStatus("BAD REQUEST: " + response.getStatus()
-                           + ", " + response.getStatusInfo().toString()
-                           + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                        operOutput.setStatus("BAD REQUEST: "
+                           + bldrStatus.toString());
+                        break;
+                     }
+                     case 401: // UNAUTHORIZED
+                     {
+                        error = true;
+                        operOutput.setError(error);
+                        operOutput.setState(STATE.NOTAUTHORIZED);
+                        operOutput.setStatus("UNAUTHORIZED: "
+                           + bldrStatus.toString());
                         break;
                      }
                      case 403: // FORBIDDEN
@@ -811,9 +843,8 @@ public class RestDataAccess extends DataAccess {
                         error = true;
                         operOutput.setError(error);
                         operOutput.setState(STATE.FAILED);
-                        operOutput.setStatus("Forbidden read/search: "
-                           + response.getStatus() + ", " + response.getStatusInfo().toString()
-                           + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                        operOutput.setStatus("FORBIDDEN: "
+                           + bldrStatus.toString());
                         break;
                      }
                      case 404: // NOT FOUND
@@ -821,17 +852,16 @@ public class RestDataAccess extends DataAccess {
                         error = true;
                         operOutput.setError(error);
                         operOutput.setState(STATE.NOTEXIST);
-                        operOutput.setStatus(response.getStatusInfo().toString()
-                           + ", " + uriRequest);
+                        operOutput.setStatus("NOT FOUND: "
+                           + bldrStatus.toString());
                         break;
                      }
                      default: {
                         error = true;
                         operOutput.setError(error);
                         operOutput.setState(STATE.ERROR);
-                        operOutput.setStatus("Default Response: " + response.getStatus()
-                           + ", " + response.getStatusInfo().toString()
-                           + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                        operOutput.setStatus("Default Response: "
+                           + bldrStatus.toString());
                         break;
                      }
                   }
@@ -855,7 +885,7 @@ public class RestDataAccess extends DataAccess {
                         error = true;
                         operOutput.setError(error);
                         operOutput.setState(STATE.ERROR);
-                        operOutput.setStatus("Couldnot get Uid from Response: "
+                        operOutput.setStatus("Could not get Uid from Response: "
                            + ex.getMessage());
                      }
 
@@ -872,14 +902,42 @@ public class RestDataAccess extends DataAccess {
                      operOutput.setStatus("Replaced document");
                      break;
                   }
+                  case 302: // FOUND (REDIRECT)
+                  {
+                     jsonHeaders = new JSONObject();
+
+                     for (String s : response.getHeaders().keySet()) {
+                        if (!STR.isEmpty(s)) {
+                           value = response.getHeaderString(s);
+                           if (!STR.isEmpty(value)) {
+                              jsonHeaders.put(s, value);
+                           }
+                        }
+                     }
+
+                     jsonOutput.put(ConstantsIF.HEADERS, jsonHeaders);
+
+                     operOutput.setState(STATE.WARNING);
+                     operOutput.setStatus("Redirect: "
+                        + bldrStatus.toString());
+                     break;
+                  }
                   case 400: // BAD REQUEST
                   {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.FAILED);
-                     operOutput.setStatus("BAD REQUEST: " + response.getStatus()
-                        + ", " + response.getStatusInfo().toString()
-                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     operOutput.setStatus("BAD REQUEST: "
+                        + bldrStatus.toString());
+                     break;
+                  }
+                  case 401: // UNAUTHORIZED
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.NOTAUTHORIZED);
+                     operOutput.setStatus("UNAUTHORIZED: "
+                        + bldrStatus.toString());
                      break;
                   }
                   case 403: // FORBIDDEN
@@ -887,9 +945,8 @@ public class RestDataAccess extends DataAccess {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.FAILED);
-                     operOutput.setStatus("Forbidden replace: " + response.getStatus()
-                        + ", " + response.getStatusInfo().toString()
-                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     operOutput.setStatus("FORBIDDEN: "
+                        + bldrStatus.toString());
                      break;
                   }
                   case 404: // NOT FOUND
@@ -897,17 +954,17 @@ public class RestDataAccess extends DataAccess {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.NOTEXIST);
-                     operOutput.setStatus(response.getStatusInfo().toString()
-                        + ", " + uriRequest);
+                     operOutput.setStatus("NOT FOUND: "
+                        + bldrStatus.toString()
+                     );
                      break;
                   }
                   default: {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.ERROR);
-                     operOutput.setStatus("Default Response: " + response.getStatus()
-                        + ", " + response.getStatusInfo().toString()
-                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     operOutput.setStatus("Default Response: "
+                        + bldrStatus.toString());
                      break;
                   }
                }
@@ -924,14 +981,42 @@ public class RestDataAccess extends DataAccess {
                      operOutput.setStatus("Deleted document");
                      break;
                   }
+                  case 302: // FOUND (REDIRECT)
+                  {
+                     jsonHeaders = new JSONObject();
+
+                     for (String s : response.getHeaders().keySet()) {
+                        if (!STR.isEmpty(s)) {
+                           value = response.getHeaderString(s);
+                           if (!STR.isEmpty(value)) {
+                              jsonHeaders.put(s, value);
+                           }
+                        }
+                     }
+
+                     jsonOutput.put(ConstantsIF.HEADERS, jsonHeaders);
+
+                     operOutput.setState(STATE.WARNING);
+                     operOutput.setStatus("Redirect: "
+                        + bldrStatus.toString());
+                     break;
+                  }
                   case 400: // BAD REQUEST
                   {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.FAILED);
-                     operOutput.setStatus("BAD REQUEST: " + response.getStatus()
-                        + ", " + response.getStatusInfo().toString()
-                        + ", Entity='" + (entity == null ? NULL : entity) + "'");
+                     operOutput.setStatus("BAD REQUEST: "
+                        + bldrStatus.toString());
+                     break;
+                  }
+                  case 401: // UNAUTHORIZED
+                  {
+                     error = true;
+                     operOutput.setError(error);
+                     operOutput.setState(STATE.NOTAUTHORIZED);
+                     operOutput.setStatus("UNAUTHORIZED: "
+                        + bldrStatus.toString());
                      break;
                   }
                   case 403: // FORBIDDEN
@@ -939,8 +1024,8 @@ public class RestDataAccess extends DataAccess {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.FAILED);
-                     operOutput.setStatus("Forbidden delete: "
-                        + response.getStatusInfo().toString());
+                     operOutput.setStatus("FORBIDDEN: "
+                        + bldrStatus.toString());
                      break;
                   }
                   case 404: // NOT FOUND
@@ -948,17 +1033,16 @@ public class RestDataAccess extends DataAccess {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.NOTEXIST);
-                     operOutput.setStatus(response.getStatusInfo().toString()
-                        + ", " + uriRequest);
+                     operOutput.setStatus("NOT FOUND: "
+                        + bldrStatus.toString());
                      break;
                   }
                   default: {
                      error = true;
                      operOutput.setError(error);
                      operOutput.setState(STATE.ERROR);
-                     operOutput.setStatus("Default Response: " + response.getStatus()
-                        + ", " + response.getStatusInfo().toString() + ", Entity='"
-                        + (entity == null ? NULL : entity) + "'");
+                     operOutput.setStatus("Default Response: "
+                        + bldrStatus.toString());
                      break;
                   }
                }
@@ -973,12 +1057,12 @@ public class RestDataAccess extends DataAccess {
                break;
             }
          }
-         
+
          if (response.getStatus() == 400 || response.getStatus() >= 500) {
-            _logger.log(Level.SEVERE, "{0}, {1}, Entity=''{2}''", 
+            _logger.log(Level.SEVERE, "{0}, {1}, Entity=''{2}''",
                new Object[]{
-                  response.getStatus(), 
-                  response.getStatusInfo().toString(), 
+                  response.getStatus(),
+                  response.getStatusInfo().toString(),
                   entity == null ? NULL : entity});
          }
       }
